@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -117,14 +118,18 @@ data RestCallErrorCode = RestCallErrorCode Int T.Text T.Text
   deriving (Show, Eq, Ord)
 
 -- | Execute one http request and get a response
-restCall :: (FromJSON a, Request (r a)) => DiscordHandle -> r a -> IO (Either RestCallErrorCode a)
+restCall :: (FromJSON (Response r), Request r) => DiscordHandle -> r -> IO (Either RestCallErrorCode (Response r))
 restCall h r = do empty <- isEmptyMVar (discordHandleLibraryError h)
                   if not empty
                   then pure (Left (RestCallErrorCode 400 "Library Stopped Working" ""))
                   else do
                       resp <- writeRestCall (discordHandleRestChan h) r
                       case resp of
-                        Right x -> pure (Right x)
+                        Right x -> do
+                            c <- readCache h
+                            let c' = updateCache c r x
+                            putMVar (snd $ discordHandleCache h) (Right c')
+                            pure (Right x)
                         Left (RestCallInternalErrorCode c e1 e2) ->
                           pure (Left (RestCallErrorCode c (TE.decodeUtf8 e1) (TE.decodeUtf8 e2)))
                         Left (RestCallInternalHttpException _) ->

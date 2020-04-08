@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -15,10 +16,13 @@ import qualified Network.HTTP.Req as R
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway.Cache
 
 instance Request (VoiceRequest a) where
+  type Response (VoiceRequest a) = a
   majorRoute = voiceMajorRoute
   jsonRequest = voiceJsonRequest
+  updateCache = voiceUpdateCache
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
 data VoiceRequest a where
@@ -39,3 +43,6 @@ voices = baseUrl /: "voice"
 voiceJsonRequest :: VoiceRequest r -> JsonRequest
 voiceJsonRequest c = case c of
   (ListVoiceRegions) -> Get (voices /: "regions") mempty
+
+voiceUpdateCache :: Cache -> VoiceRequest r -> Response (VoiceRequest r) -> Cache
+voiceUpdateCache c _ _ = c

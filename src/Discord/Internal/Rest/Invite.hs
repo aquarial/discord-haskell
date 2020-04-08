@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -17,10 +18,13 @@ import qualified Data.Text as T
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway.Cache
 
 instance Request (InviteRequest a) where
+  type Response (InviteRequest a) = a
   majorRoute = inviteMajorRoute
   jsonRequest = inviteJsonRequest
+  updateCache = inviteUpdateCache
 
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
@@ -47,3 +51,6 @@ inviteJsonRequest :: InviteRequest r -> JsonRequest
 inviteJsonRequest c = case c of
   (GetInvite g) -> Get (invite R./: g) mempty
   (DeleteInvite g) -> Delete (invite R./: g) mempty
+
+inviteUpdateCache :: Cache -> InviteRequest r -> Response (InviteRequest r) -> Cache
+inviteUpdateCache c _ _ = c

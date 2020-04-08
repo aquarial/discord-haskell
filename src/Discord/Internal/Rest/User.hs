@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -25,10 +26,13 @@ import qualified Data.ByteString.Base64 as B64
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway
 
 instance Request (UserRequest a) where
+  type Response (UserRequest a) = a
   majorRoute = userMajorRoute
   jsonRequest = userJsonRequest
+  updateCache = userUpdateCache
 
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
@@ -105,3 +109,6 @@ userJsonRequest c = case c of
 
   (GetUserConnections) ->
     Get (users /: "@me" /: "connections") mempty
+
+userUpdateCache :: Cache -> UserRequest r -> Response (UserRequest r) -> Cache
+userUpdateCache c _ _ = c

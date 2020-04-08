@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies#-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -28,10 +29,13 @@ import qualified Data.Text as T
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway.Cache
 
 instance Request (GuildRequest a) where
+  type Response (GuildRequest a) = a
   majorRoute = guildMajorRoute
   jsonRequest = guildJsonRequest
+  updateCache = guildUpdateCache
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
 data GuildRequest a where
@@ -464,3 +468,5 @@ guildJsonRequest c = case c of
   (GetGuildVanityURL guild) ->
       Get (guilds // guild /: "vanity-url") mempty
 
+guildUpdateCache :: Cache -> GuildRequest a -> Response (GuildRequest a) -> Cache
+guildUpdateCache c _ _ = c

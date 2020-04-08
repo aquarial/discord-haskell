@@ -1,7 +1,7 @@
 cabal-version:       2.0
 name:                discord-haskell
 -- library version is also noted at src/Discord/Rest/Prelude.hs
-version:             1.5.0
+version:             1.5.1
 description:         Functions and data types to write discord bots.
                      Official discord docs <https://discordapp.com/developers/docs/reference>.
                      .

@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -27,13 +28,17 @@ import Network.HTTP.Client (RequestBody (RequestBodyBS))
 import Network.HTTP.Client.MultipartFormData (partFileRequestBody, partBS, PartM)
 import Network.HTTP.Req ((/:))
 import qualified Network.HTTP.Req as R
+import qualified Data.Map as M
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway
 
 instance Request (ChannelRequest a) where
+  type Response (ChannelRequest a) = a
   majorRoute = channelMajorRoute
   jsonRequest = channelJsonRequest
+  updateCache = channelUpdateCache
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
 data ChannelRequest a where
@@ -340,3 +345,10 @@ channelJsonRequest c = case c of
   (GroupDMRemoveRecipient chan userid) ->
       Delete (channels // chan // chan /: "recipients" // userid) mempty
 
+channelUpdateCache :: Cache -> ChannelRequest a -> Response (ChannelRequest a) -> Cache
+channelUpdateCache c (GetChannel cid) channel =
+  c { _dmChannels = if isDMChannel channel then M.insert cid channel (_dmChannels c) else _dmChannels c, _channels = M.insert cid channel (_channels c)}
+  where
+    isDMChannel (ChannelDirectMessage {..}) = True
+    isDMChannel _ = False
+channelUpdateCache c _ _ = c

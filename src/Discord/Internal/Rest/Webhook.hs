@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -25,10 +26,13 @@ import Network.HTTP.Client.MultipartFormData (partBS, partFileRequestBody)
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway.Cache
 
 instance Request (WebhookRequest a) where
+  type Response (WebhookRequest a) = a
   majorRoute = webhookMajorRoute
   jsonRequest = webhookJsonRequest
+  updateCache = webhookUpdateCache
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
 data WebhookRequest a where
@@ -158,3 +162,6 @@ webhookJsonRequest ch = case ch of
             partsJson = [partBS "payload_json" $ BL.toStrict $ encode $ toJSON $ object ["embed" .= createEmbed e] | e <- embeds]
             body = R.reqBodyMultipart (partsJson ++ parts)
         in Post (baseUrl /: "webhooks" // w /: tok) body mempty
+
+webhookUpdateCache :: Cache -> WebhookRequest r -> Response (WebhookRequest r) -> Cache
+webhookUpdateCache c _ _ = c

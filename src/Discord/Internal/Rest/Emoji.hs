@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -24,10 +25,13 @@ import qualified Data.ByteString.Base64 as B64
 
 import Discord.Internal.Rest.Prelude
 import Discord.Internal.Types
+import Discord.Internal.Gateway.Cache
 
 instance Request (EmojiRequest a) where
+  type Response (EmojiRequest a) = a
   majorRoute = emojiMajorRoute
   jsonRequest = emojiJsonRequest
+  updateCache = emojiUpdateCache
 
 
 -- | Data constructor for requests. See <https://discordapp.com/developers/docs/resources/ API>
@@ -108,3 +112,6 @@ emojiJsonRequest c = case c of
                                     (pure (R.ReqBodyJson o))
                                     mempty
   (DeleteGuildEmoji g e) -> Delete (guilds // g /: "emojis" // e) mempty
+
+emojiUpdateCache :: Cache -> EmojiRequest r -> Response (EmojiRequest r) -> Cache
+emojiUpdateCache c _ _ = c

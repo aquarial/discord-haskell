@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 -- | Provides a higher level interface to the rest functions.
 --   Preperly writes to the rate-limit loop. Creates separate
@@ -34,7 +35,7 @@ startRestThread auth log = do
   pure (c, tid)
 
 -- | Execute a request blocking until a response is received
-writeRestCall :: (Request (r a), FromJSON a) => DiscordHandleRestChan -> r a -> IO (Either RestCallInternalException a)
+writeRestCall :: (Request r , FromJSON (Response r)) => DiscordHandleRestChan -> r  -> IO (Either RestCallInternalException (Response r))
 writeRestCall c req = do
   m <- newEmptyMVar
   writeChan c (majorRoute req, jsonRequest req, m)

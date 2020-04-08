@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
@@ -16,6 +17,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Network.HTTP.Req as R
 
 import Discord.Internal.Types
+import Discord.Internal.Gateway (Cache)
 
 -- | Discord requires HTTP headers for authentication.
 authHeader :: Auth -> R.Option 'R.Https
@@ -42,8 +44,10 @@ data JsonRequest where
   Post   :: R.HttpBody a => R.Url 'R.Https -> RestIO a -> R.Option 'R.Https -> JsonRequest
 
 class Request a where
+  type Response a :: *
   majorRoute :: a -> String
   jsonRequest :: a -> JsonRequest
+  updateCache :: Cache -> a -> Response a -> Cache
 
 -- | Same Monad as IO. Overwrite Req settings
 newtype RestIO a = RestIO { restIOtoIO :: IO a }
